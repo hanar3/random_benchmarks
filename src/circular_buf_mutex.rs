@@ -2,13 +2,14 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
+const BUFFERS: usize = 1024 * 10;
 #[derive(Debug, Copy, Clone)]
 pub struct Buffer {
     pub data: Option<&'static str>,
 }
 
 pub struct Pool {
-    pub buffers: [Buffer; 256],
+    pub buffers: [Buffer; BUFFERS],
     pub windex: i32,
     pub rindex: i32,
 }
@@ -18,11 +19,11 @@ impl Pool {
         Pool {
             windex: 0,
             rindex: 0,
-            buffers: [Buffer { data: None }; 256],
+            buffers: [Buffer { data: None }; BUFFERS],
         }
     }
     pub fn write(&mut self, data: &'static str) -> bool {
-        let next_windex = (self.windex + 1) % 256;
+        let next_windex = (self.windex + 1) % BUFFERS as i32;
         if next_windex == self.rindex {
             // println!("Failed to log, log buffer is full");
             return false;
@@ -36,7 +37,7 @@ impl Pool {
     pub fn read(&mut self) -> Option<&'static str> {
         if self.rindex != self.windex {
             let data = self.buffers[self.rindex as usize].data;
-            let next_rindex = (self.rindex + 1) % 256;
+            let next_rindex = (self.rindex + 1) % BUFFERS as i32;
             self.rindex = next_rindex;
             // println!("read {:?} ridx: {}", data, self.rindex);
             return data;
